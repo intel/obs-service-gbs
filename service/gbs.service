@@ -1,0 +1,17 @@
+<service name="gbs">
+    <summary>Build with GBS (Git Build System)</summary>
+    <description>Export packaging files from a git repository managed with GBS (Git Build System).</description>
+    <parameter name="url">
+        <description>Remote repository URL</description>
+        <required/>
+    </parameter>
+    <parameter name="revision">
+        <description>Revision (tree-ish) to be built. Default is HEAD.</description>
+    </parameter>
+    <parameter name="verbose">
+        <description>Enable verbose output. For debugging purposes.</description>
+        <allowedvalue>no</allowedvalue>
+        <allowedvalue>yes</allowedvalue>
+    </parameter>
+</service>
+
