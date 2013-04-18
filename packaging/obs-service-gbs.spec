@@ -1,5 +1,3 @@
-%define do_unittests 0
-
 Name:           obs-service-gbs
 License:        GPL-2.0+
 Group:          Development/Tools/Building
@@ -15,6 +13,7 @@ BuildRequires:  python-setuptools
 %if 0%{?do_unittests}
 BuildRequires:  python-coverage
 BuildRequires:  python-nose
+BuildRequires:  gbs
 BuildRequires:  obs-service-git-buildpackage >= 0.1
 %endif
 BuildArch:      noarch
