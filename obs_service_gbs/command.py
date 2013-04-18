@@ -24,7 +24,7 @@ import shutil
 import subprocess
 import tempfile
 
-from obs_service_gbp import logger, gbplog, CachedRepo, CachedRepoError, gbplog
+from obs_service_gbp import LOGGER, gbplog, CachedRepo, CachedRepoError, gbplog
 
 class ServiceError(Exception):
     """Source service errors"""
@@ -56,7 +56,7 @@ def parse_args(argv):
 def main(argv=None):
     """Main function"""
 
-    logger.info('Starting GBS source service')
+    LOGGER.info('Starting GBS source service')
     ret = 0
     tmpdir = None
 
@@ -66,7 +66,7 @@ def main(argv=None):
 
         if args.verbose == 'yes':
             gbplog.setup(color='auto', verbose=True)
-            logger.setLevel(gbplog.DEBUG)
+            LOGGER.setLevel(gbplog.DEBUG)
 
         # Create / update cached repository
         repo = CachedRepo(args.url)
@@ -86,7 +86,7 @@ def main(argv=None):
 
         # Export sources with GBS
         cmd = ['gbs'] + construct_gbs_args(args, tmpdir)
-        logger.info('Exporting packaging files with GBS')
+        LOGGER.info('Exporting packaging files with GBS')
         popen = subprocess.Popen(cmd, cwd=repo.repodir)
         popen.communicate()
         if popen.returncode:
@@ -98,13 +98,13 @@ def main(argv=None):
             shutil.move(os.path.join(exportdir, fname),
                         os.path.join(args.outdir, fname))
 
-        logger.info('Packaging files successfully exported')
+        LOGGER.info('Packaging files successfully exported')
 
     except ServiceError as err:
-        logger.error(err[0])
+        LOGGER.error(err[0])
         ret = err[1]
     except CachedRepoError as err:
-        logger.error('RepoCache: %s' % err)
+        LOGGER.error('RepoCache: %s' % err)
         ret = 1
     finally:
         if tmpdir:
