@@ -53,12 +53,9 @@ class UnitTestsBase(object):
         os.environ['GIT_CEILING_DIRECTORIES'] = os.getcwd()
         # Create temporary workdir
         cls.workdir = os.path.abspath(tempfile.mkdtemp(prefix='%s_' %
-                                     __name__, dir='.'))
+                                      cls.__name__, dir='.'))
         cls.orig_dir = os.getcwd()
         os.chdir(cls.workdir)
-        # Use cache in our workdir
-        cls.cachedir = os.path.join(cls.workdir, 'cache')
-        os.environ['CACHEDIR'] = cls.cachedir
         # Create an orig repo for testing
         cls.orig_repo = cls.create_orig_repo('orig')
 
@@ -75,8 +72,12 @@ class UnitTestsBase(object):
     def setup(self):
         """Test case setup"""
         # Change to a temporary directory
-        self.tmpdir = tempfile.mkdtemp(dir=self.workdir)
+        self.tmpdir = tempfile.mkdtemp(prefix='test_', dir=self.workdir)
         os.chdir(self.tmpdir)
+        # Individual cache for every test case
+        suffix = os.path.basename(self.tmpdir).replace('test', '')
+        self.cachedir = os.path.join(self.workdir, 'cache' + suffix)
+        os.environ['OBS_GBS_REPO_CACHE_DIR'] = self.cachedir
 
     def teardown(self):
         """Test case teardown"""
@@ -145,5 +146,22 @@ class TestGbsService(UnitTestsBase):
         assert service(['--url', self.orig_repo.path, '--verbose=yes']) == 0
         with assert_raises(SystemExit):
             service(['--url', self.orig_repo.path, '--verbose=foob'])
+
+    def test_options_config(self):
+        """Test the --config option"""
+        # Create config file
+        with open('my.conf', 'w') as conf:
+            conf.write('[general]\n')
+            conf.write('repo-cache-dir = my-repo-cache\n')
+
+        # Mangle environment
+        default_cache = os.environ['OBS_GBS_REPO_CACHE_DIR']
+        del os.environ['OBS_GBS_REPO_CACHE_DIR']
+
+        # Check that the repo cache we configured is actually used
+        assert (service(['--url', self.orig_repo.path, '--config', 'my.conf'])
+                == 0)
+        assert not os.path.exists(default_cache), os.listdir('.')
+        assert os.path.exists('my-repo-cache'), os.listdir('.')
 
 

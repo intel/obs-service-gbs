@@ -24,6 +24,8 @@ import shutil
 import subprocess
 import tempfile
 
+from ConfigParser import SafeConfigParser
+
 from obs_service_gbp import LOGGER, gbplog, CachedRepo, CachedRepoError, gbplog
 
 class ServiceError(Exception):
@@ -40,8 +42,34 @@ def construct_gbs_args(args, outdir):
         cmd_argv.append('--commit=%s' % args.revision)
     return global_argv + ['export'] + cmd_argv
 
+def read_config(filenames):
+    '''Read configuration file(s)'''
+    # By default, share repos with git-buildpackage service
+    defaults = {'repo-cache-dir': '/var/cache/obs/git-buildpackage-repos/'}
+
+    filenames = [os.path.expanduser(fname) for fname in filenames]
+    LOGGER.debug('Trying %s config files: %s' % (len(filenames), filenames))
+    parser = SafeConfigParser(defaults=defaults)
+    read = parser.read(filenames)
+    LOGGER.debug('Read %s config files: %s' % (len(read), read))
+
+    # Add our one-and-only section, if it does not exist
+    if not parser.has_section('general'):
+        parser.add_section('general')
+
+    # Read overrides from environment
+    for key in defaults.keys():
+        envvar ='OBS_GBS_%s' % key.replace('-', '_').upper()
+        if envvar in os.environ:
+            parser.set('general', key, os.environ[envvar])
+
+    # We only use keys from one section, for now
+    return dict(parser.items('general'))
+
 def parse_args(argv):
     """Argument parser"""
+    default_configs = ['/etc/obs/services/gbs',
+                       '~/.obs/gbs']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', help='Remote repository URL', required=True)
@@ -51,12 +79,13 @@ def parse_args(argv):
                         default='HEAD')
     parser.add_argument('--verbose', '-v', help='Verbose output',
                         choices=['yes', 'no'])
+    parser.add_argument('--config', default=default_configs, action='append',
+                        help='Config file to use, can be given multiple times')
     return parser.parse_args(argv)
 
 def main(argv=None):
     """Main function"""
 
-    LOGGER.info('Starting GBS source service')
     ret = 0
     tmpdir = None
 
@@ -68,8 +97,11 @@ def main(argv=None):
             gbplog.setup(color='auto', verbose=True)
             LOGGER.setLevel(gbplog.DEBUG)
 
+        LOGGER.info('Starting GBS source service')
+
+        config = read_config(args.config)
         # Create / update cached repository
-        repo = CachedRepo(args.url)
+        repo = CachedRepo(config['repo-cache-dir'], args.url)
         args.revision = repo.update_working_copy(args.revision,
                                                  submodules=False)
 

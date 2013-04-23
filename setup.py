@@ -28,5 +28,6 @@ setup(name='obs_service_gbs',
       author_email='markus.lehtonen@linux.intel.com',
       packages=['obs_service_gbs'],
       data_files=[('/usr/lib/obs/service', ['service/gbs',
-                                            'service/gbs.service'])],
+                                            'service/gbs.service']),
+                  ('/etc/obs/services', ['config/gbs'])],
      )
