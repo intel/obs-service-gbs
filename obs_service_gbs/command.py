@@ -44,8 +44,7 @@ def construct_gbs_args(args, outdir):
 
 def read_config(filenames):
     '''Read configuration file(s)'''
-    # By default, share repos with git-buildpackage service
-    defaults = {'repo-cache-dir': '/var/cache/obs/git-buildpackage-repos/'}
+    defaults = {'repo-cache-dir': '/var/cache/obs/gbs-repos/'}
 
     filenames = [os.path.expanduser(fname) for fname in filenames]
     LOGGER.debug('Trying %s config files: %s' % (len(filenames), filenames))
