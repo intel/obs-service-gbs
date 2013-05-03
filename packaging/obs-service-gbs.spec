@@ -2,19 +2,19 @@ Name:           obs-service-gbs
 License:        GPL-2.0+
 Group:          Development/Tools/Building
 Summary:        Get sources from a repository managed with GBS
-Version:        0.0
+Version:        0.1
 Release:        0
 URL:            http://www.tizen.org
 Source:         %{name}-%{version}.tar.bz2
 Requires:       gbs
-Requires:       obs-service-git-buildpackage >= 0.1
+Requires:       obs-service-git-buildpackage >= 0.2
 BuildRequires:  python
 BuildRequires:  python-setuptools
 %if 0%{?do_unittests}
 BuildRequires:  python-coverage
 BuildRequires:  python-nose
 BuildRequires:  gbs
-BuildRequires:  obs-service-git-buildpackage >= 0.1
+BuildRequires:  obs-service-git-buildpackage >= 0.2
 %endif
 BuildArch:      noarch
 

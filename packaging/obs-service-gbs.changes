@@ -1,3 +1,15 @@
+* Fri May 03 2013 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.1
+- Use gbs-specific default repository cache directory
+- Support for config files
+  Initial support for reading service configuration from a file.
+  Currently, there is only one configuration setting, i.e.
+  'repo-cache-dir'. All configuration settings can be overridden with
+  environment variables.
+  By default, the service tries to read '/etc/obs/services/gbs' and
+  '~/.obs/gbs'.
+- packaging: fix requirements for unit tests
+- Rename logger to LOGGER
+
 * Thu Apr 04 2013 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.0
 - Initial version
 
