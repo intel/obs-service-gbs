@@ -75,6 +75,7 @@ class UnitTestsBase(object):
 
     def __init__(self):
         self.tmpdir = None
+        self.cachedir = None
 
     def setup(self):
         """Test case setup"""
