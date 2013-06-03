@@ -13,14 +13,14 @@ Release:        %{pre_release}
 %endif
 URL:            http://www.tizen.org
 Source:         %{name}-%{version}.tar.bz2
-Requires:       gbs
+Requires:       gbs-export
 Requires:       obs-service-git-buildpackage >= 0.2
 BuildRequires:  python
 BuildRequires:  python-setuptools
 %if 0%{?do_unittests}
 BuildRequires:  python-coverage
 BuildRequires:  python-nose
-BuildRequires:  gbs
+BuildRequires:  gbs-export
 BuildRequires:  obs-service-git-buildpackage >= 0.2
 %endif
 BuildArch:      noarch

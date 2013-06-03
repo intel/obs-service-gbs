@@ -39,8 +39,15 @@ class UnitTestsBase(object):
     def create_orig_repo(cls, name):
         """Create test repo"""
         orig_repo = GitRepository.create(os.path.join(cls.workdir, name))
-        orig_repo.commit_dir(TEST_DATA_DIR, 'Initial version', 'master',
-                             create_missing_branch=True)
+        # First, add everything else except for packaging
+        files = os.listdir(TEST_DATA_DIR)
+        files.remove('packaging')
+        orig_repo.add_files(files, work_tree=TEST_DATA_DIR)
+        orig_repo.commit_staged('Initial version')
+        # Then, add packaging files
+        orig_repo.add_files('packaging', work_tree=TEST_DATA_DIR)
+        orig_repo.commit_staged('Add packaging files')
+        orig_repo.create_tag('v0.1', msg='Version 0.1')
         orig_repo.force_head('master', hard=True)
         # Make new commit
         cls.update_repository_file(orig_repo, 'foo.txt', 'new data\n')
@@ -128,6 +135,12 @@ class TestGbsService(UnitTestsBase):
         os.chmod('foo/bar', stat.S_IREAD | stat.S_IEXEC)
         assert service(['--url', self.orig_repo.path, '--outdir=foo/bar']) == 1
         os.chmod('foo/bar', stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
+
+    def test_gbs_error(self):
+        """Test GBS export failure"""
+        assert service(['--url', self.orig_repo.path, '--revision',
+                        'v0.1~1']) == 2
+        assert os.listdir('.') == []
 
     def test_options_outdir(self):
         """Test the --outdir option"""

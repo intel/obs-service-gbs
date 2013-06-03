@@ -21,26 +21,38 @@
 import argparse
 import os
 import shutil
-import subprocess
 import tempfile
-
+import traceback
 from ConfigParser import SafeConfigParser
 
-from obs_service_gbp import LOGGER, gbplog, CachedRepo, CachedRepoError, gbplog
+from gitbuildsys.cmd_export import main as cmd_export
+from gitbuildsys import log as gbs_log
+from gitbuildsys.errors import CmdError
+
+from obs_service_gbp import LOGGER, gbplog, CachedRepo, CachedRepoError
 
 class ServiceError(Exception):
     """Source service errors"""
     pass
 
-def construct_gbs_args(args, outdir):
+def construct_gbs_args(args, outdir, gitdir):
     """Construct args list for GBS"""
-    global_argv = []
-    cmd_argv = ['--outdir=%s' % outdir]
-    if args.verbose == 'yes':
-        global_argv.append('--verbose')
+    # Replicate gbs export command line arguments
+    gbs_args = {'outdir': outdir,
+                'gitdir': gitdir,
+                'spec': None,
+                'commit': None,
+                'include_all': None,
+                'source_rpm': None,
+                'no_patch_export': None,
+                'upstream_branch': None,
+                'upstream_tag': None,
+                'squash_patches_until': None,
+                'packaging_dir': None,
+                'debug': None}
     if args.revision:
-        cmd_argv.append('--commit=%s' % args.revision)
-    return global_argv + ['export'] + cmd_argv
+        gbs_args['commit'] = args.revision
+    return argparse.Namespace(**gbs_args)
 
 def read_config(filenames):
     '''Read configuration file(s)'''
@@ -65,6 +77,36 @@ def read_config(filenames):
     # We only use keys from one section, for now
     return dict(parser.items('general'))
 
+def gbs_export(repo, args):
+    '''Export packaging files with GBS'''
+    # Create temporary directory
+    try:
+        tmpdir = tempfile.mkdtemp(dir=args.outdir)
+    except OSError as err:
+        raise ServiceError('Failed to create tmpdir: %s' % err, 1)
+
+    # Do export
+    try:
+        gbs_args = construct_gbs_args(args, tmpdir, repo.repodir)
+        LOGGER.info('Exporting packaging files with GBS')
+        LOGGER.debug('gbs args: %s' % gbs_args)
+        try:
+            cmd_export(gbs_args)
+        except CmdError as err:
+            raise ServiceError('GBS export failed: %s' % err, 2)
+        except Exception as err:
+            LOGGER.debug(traceback.format_exc())
+            raise ServiceError('Encatched exception in GBS, export failed', 2)
+
+        # Move packaging files from tmpdir to actual outdir
+        exportdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])
+        for fname in os.listdir(exportdir):
+            shutil.move(os.path.join(exportdir, fname),
+                        os.path.join(args.outdir, fname))
+        LOGGER.info('Packaging files successfully exported')
+    finally:
+        shutil.rmtree(tmpdir)
+
 def parse_args(argv):
     """Argument parser"""
     default_configs = ['/etc/obs/services/gbs',
@@ -86,8 +128,6 @@ def main(argv=None):
     """Main function"""
 
     ret = 0
-    tmpdir = None
-
     try:
         args = parse_args(argv)
         args.outdir = os.path.abspath(args.outdir)
@@ -95,6 +135,10 @@ def main(argv=None):
         if args.verbose == 'yes':
             gbplog.setup(color='auto', verbose=True)
             LOGGER.setLevel(gbplog.DEBUG)
+            gbs_log.setup(verbose=True)
+        else:
+            gbplog.setup(color='auto', verbose=False)
+            gbs_log.setup(verbose=False)
 
         LOGGER.info('Starting GBS source service')
 
@@ -103,33 +147,15 @@ def main(argv=None):
         repo = CachedRepo(config['repo-cache-dir'], args.url)
         args.revision = repo.update_working_copy(args.revision,
                                                  submodules=False)
-
-        # Create outdir and a temporary directory
+        # Create outdir
         try:
             os.makedirs(args.outdir)
         except OSError as err:
             if err.errno != os.errno.EEXIST:
                 raise ServiceError('Failed to create outdir: %s' % err, 1)
-        try:
-            tmpdir = tempfile.mkdtemp(dir=args.outdir)
-        except OSError as err:
-            raise ServiceError('Failed to create tmpdir: %s' % err, 1)
 
         # Export sources with GBS
-        cmd = ['gbs'] + construct_gbs_args(args, tmpdir)
-        LOGGER.info('Exporting packaging files with GBS')
-        popen = subprocess.Popen(cmd, cwd=repo.repodir)
-        popen.communicate()
-        if popen.returncode:
-            raise ServiceError('GBS failed, unable to export packaging files',
-                               2)
-        # Move packaging files from tmpdir to actual outdir
-        exportdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])
-        for fname in os.listdir(exportdir):
-            shutil.move(os.path.join(exportdir, fname),
-                        os.path.join(args.outdir, fname))
-
-        LOGGER.info('Packaging files successfully exported')
+        gbs_export(repo, args)
 
     except ServiceError as err:
         LOGGER.error(err[0])
@@ -137,8 +163,5 @@ def main(argv=None):
     except CachedRepoError as err:
         LOGGER.error('RepoCache: %s' % err)
         ret = 1
-    finally:
-        if tmpdir:
-            shutil.rmtree(tmpdir)
 
     return ret
