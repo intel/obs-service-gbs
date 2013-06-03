@@ -1,9 +1,16 @@
+# Set to 0 if "normal release"
+%define pre_release 0pre1
+
 Name:           obs-service-gbs
 License:        GPL-2.0+
 Group:          Development/Tools/Building
 Summary:        Get sources from a repository managed with GBS
-Version:        0.1
-Release:        0
+Version:        0.2
+%if 0%{?opensuse_bs}
+Release:        %{?pre_release:%{pre_release}.}<CI_CNT>.<B_CNT>
+%else
+Release:        %{pre_release}
+%endif
 URL:            http://www.tizen.org
 Source:         %{name}-%{version}.tar.bz2
 Requires:       gbs
