@@ -27,10 +27,19 @@ from nose.tools import assert_raises
 
 from gbp.git.repository import GitRepository
 
-from obs_service_gbs.command import main as service
+from obs_service_gbs.command import main as export_service
 
 
 TEST_DATA_DIR = os.path.abspath(os.path.join('tests', 'data'))
+
+
+def service(argv=None):
+    """Wrapper for service"""
+    # Set non-existent config file so that user/system settings don't affect
+    # tests
+    dummy_conf = os.path.abspath(os.path.join(os.path.curdir, 'gbs.noconfig'))
+    return export_service(['--config', dummy_conf] + argv)
+
 
 class UnitTestsBase(object):
     """Base class for unit tests"""
@@ -163,14 +172,19 @@ class TestGbsService(UnitTestsBase):
 
     def test_options_config(self):
         """Test the --config option"""
+        # First, test without using the wrapper so that no --config option is
+        # given to the service
+        assert export_service(['--url', 'non-existent-repo']) == 1
+
         # Create config file
         with open('my.conf', 'w') as conf:
             conf.write('[general]\n')
             conf.write('repo-cache-dir = my-repo-cache\n')
 
-        # Mangle environment
+        # Mangle environment and remove default cache
         default_cache = os.environ['OBS_GBS_REPO_CACHE_DIR']
         del os.environ['OBS_GBS_REPO_CACHE_DIR']
+        shutil.rmtree(default_cache)
 
         # Check that the repo cache we configured is actually used
         assert (service(['--url', self.orig_repo.path, '--config', 'my.conf'])

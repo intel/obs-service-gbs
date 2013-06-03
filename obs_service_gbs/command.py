@@ -120,9 +120,13 @@ def parse_args(argv):
                         default='HEAD')
     parser.add_argument('--verbose', '-v', help='Verbose output',
                         choices=['yes', 'no'])
-    parser.add_argument('--config', default=default_configs, action='append',
+    parser.add_argument('--config', action='append',
                         help='Config file to use, can be given multiple times')
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if not args.config:
+        args.config = default_configs
+
+    return args
 
 def main(argv=None):
     """Main function"""
