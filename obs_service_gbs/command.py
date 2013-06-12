@@ -28,8 +28,16 @@ from ConfigParser import SafeConfigParser
 from gitbuildsys.cmd_export import main as cmd_export
 from gitbuildsys import log as gbs_log
 from gitbuildsys.errors import CmdError
+import gbp.log as gbplog
 
-from obs_service_gbp import LOGGER, gbplog, CachedRepo, CachedRepoError
+import gbp_repocache
+from gbp_repocache import CachedRepo, CachedRepoError
+
+
+# Setup logging
+LOGGER = gbplog.getLogger('source_service')
+LOGGER.setLevel(gbplog.INFO)
+
 
 class ServiceError(Exception):
     """Source service errors"""
@@ -139,6 +147,7 @@ def main(argv=None):
         if args.verbose == 'yes':
             gbplog.setup(color='auto', verbose=True)
             LOGGER.setLevel(gbplog.DEBUG)
+            gbp_repocache.LOGGER.setLevel(gbplog.DEBUG)
             gbs_log.setup(verbose=True)
         else:
             gbplog.setup(color='auto', verbose=False)
