@@ -1,3 +1,9 @@
+* Thu Aug 08 2013 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.2
+- Release 0.2
+- Depend on the gbp-repocache package
+- Skip default config files if --config option is used
+- Utilize the GBS export API
+
 * Fri May 03 2013 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.1
 - Use gbs-specific default repository cache directory
 - Support for config files
