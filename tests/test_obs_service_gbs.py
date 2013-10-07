@@ -23,7 +23,7 @@ import shutil
 import stat
 import tempfile
 # pylint: disable=E0611
-from nose.tools import assert_raises
+from nose.tools import assert_raises, eq_, ok_
 
 from gbp.git.repository import GitRepository
 
@@ -124,49 +124,48 @@ class TestGbsService(UnitTestsBase):
         with assert_raises(SystemExit):
             service(['--url'])
         # Invalid repo
-        assert service(['--url=foo/bar.git']) != 0
+        eq_(service(['--url=foo/bar.git']), 1)
 
     def test_basic_export(self):
         """Test that export works"""
-        assert service(['--url', self.orig_repo.path]) == 0
+        eq_(service(['--url', self.orig_repo.path]), 0)
         files = set(os.listdir('.'))
         expected = set(['test-package.spec', 'test-package-0.1.tar.bz2'])
-        assert files == expected, 'expected: %s, found: %s' % (expected, files)
+        eq_(files, expected, 'expected: %s, found: %s' % (expected, files))
 
     def test_permission_problem(self):
         """Test git-buildpackage failure"""
         # Outdir creation fails
         os.makedirs('foo')
         os.chmod('foo', stat.S_IREAD | stat.S_IEXEC)
-        assert service(['--url', self.orig_repo.path, '--outdir=foo/bar']) == 1
+        eq_(service(['--url', self.orig_repo.path, '--outdir=foo/bar']), 1)
         os.chmod('foo', stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
         # Tmpdir creation fails
         os.makedirs('foo/bar')
         os.chmod('foo/bar', stat.S_IREAD | stat.S_IEXEC)
-        assert service(['--url', self.orig_repo.path, '--outdir=foo/bar']) == 1
+        eq_(service(['--url', self.orig_repo.path, '--outdir=foo/bar']), 1)
         os.chmod('foo/bar', stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
 
     def test_gbs_error(self):
         """Test GBS export failure"""
-        assert service(['--url', self.orig_repo.path, '--revision',
-                        'v0.1~1']) == 2
-        assert os.listdir('.') == []
+        eq_(service(['--url', self.orig_repo.path, '--revision', 'v0.1~1']), 2)
+        eq_(os.listdir('.'), [])
 
     def test_options_outdir(self):
         """Test the --outdir option"""
         outdir = os.path.join(self.tmpdir, 'outdir')
         args = ['--url', self.orig_repo.path, '--outdir=%s' % outdir]
-        assert service(args) == 0
-        assert os.path.isdir(outdir)
+        eq_(service(args), 0)
+        ok_(os.path.isdir(outdir))
 
     def test_options_revision(self):
         """Test the --revision option"""
-        assert service(['--url', self.orig_repo.path, '--revision=master']) == 0
-        assert service(['--url', self.orig_repo.path, '--revision=foobar']) == 1
+        eq_(service(['--url', self.orig_repo.path, '--revision=master']), 0)
+        eq_(service(['--url', self.orig_repo.path, '--revision=foobar']), 1)
 
     def test_options_verbose(self):
         """Test the --verbose option"""
-        assert service(['--url', self.orig_repo.path, '--verbose=yes']) == 0
+        eq_(service(['--url', self.orig_repo.path, '--verbose=yes']), 0)
         with assert_raises(SystemExit):
             service(['--url', self.orig_repo.path, '--verbose=foob'])
 
@@ -174,7 +173,7 @@ class TestGbsService(UnitTestsBase):
         """Test the --config option"""
         # First, test without using the wrapper so that no --config option is
         # given to the service
-        assert export_service(['--url', 'non-existent-repo']) == 1
+        eq_(export_service(['--url', 'non-existent-repo']), 1)
 
         # Create config file
         with open('my.conf', 'w') as conf:
@@ -187,9 +186,8 @@ class TestGbsService(UnitTestsBase):
         shutil.rmtree(default_cache)
 
         # Check that the repo cache we configured is actually used
-        assert (service(['--url', self.orig_repo.path, '--config', 'my.conf'])
-                == 0)
-        assert not os.path.exists(default_cache), os.listdir('.')
-        assert os.path.exists('my-repo-cache'), os.listdir('.')
+        eq_(service(['--url', self.orig_repo.path, '--config', 'my.conf']), 0)
+        ok_(not os.path.exists(default_cache), os.listdir('.'))
+        ok_(os.path.exists('my-repo-cache'), os.listdir('.'))
 
 
