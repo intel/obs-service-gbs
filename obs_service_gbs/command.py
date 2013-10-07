@@ -104,7 +104,7 @@ def gbs_export(repo, args):
             raise ServiceError('GBS export failed: %s' % err, 2)
         except Exception as err:
             LOGGER.debug(traceback.format_exc())
-            raise ServiceError('Encatched exception in GBS, export failed', 2)
+            raise ServiceError('Uncaught exception in GBS, export failed', 2)
 
         # Move packaging files from tmpdir to actual outdir
         exportdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])
