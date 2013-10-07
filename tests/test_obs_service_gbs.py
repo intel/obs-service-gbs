@@ -131,7 +131,7 @@ class TestGbsService(UnitTestsBase):
         assert service(['--url', self.orig_repo.path]) == 0
         files = set(os.listdir('.'))
         expected = set(['test-package.spec', 'test-package-0.1.tar.bz2'])
-        assert files == expected, 'expected: %s, found: %s' % (files, expected)
+        assert files == expected, 'expected: %s, found: %s' % (expected, files)
 
     def test_permission_problem(self):
         """Test git-buildpackage failure"""
