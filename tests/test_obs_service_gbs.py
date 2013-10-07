@@ -122,7 +122,7 @@ class TestGbsService(UnitTestsBase):
             service(['--foo'])
         # Option without argument
         with assert_raises(SystemExit):
-            assert service(['--url'])
+            service(['--url'])
         # Invalid repo
         assert service(['--url=foo/bar.git']) != 0
 
