@@ -30,8 +30,12 @@ from gitbuildsys import log as gbs_log
 from gitbuildsys.errors import CmdError
 import gbp.log as gbplog
 
+from gbp.rpm import guess_spec, NoSpecError
+from gitbuildsys.parsing import  basename_type
 import gbp_repocache
 from gbp_repocache import CachedRepo, CachedRepoError
+
+
 
 
 # Setup logging
@@ -42,6 +46,78 @@ LOGGER.setLevel(gbplog.INFO)
 class ServiceError(Exception):
     """Source service errors"""
     pass
+
+
+# Implementation taken from http://hetland.org
+def levenshtein( a, b ):
+    """Calculates the Levenshtein distance between a and b."""
+    n, m = len( a ), len( b )
+    if n > m:
+        # Make sure n <= m, to use O(min(n,m)) space
+        a, b = b, a
+        n, m = m, n
+
+    current = range( n + 1 )
+    for i in range( 1, m + 1 ):
+        previous, current = current, [i] + [0] * n
+        for j in range( 1, n + 1 ):
+            add, delete = previous[j] + 1, current[j - 1] + 1
+            change = previous[j - 1]
+            if a[j - 1] != b[i - 1]:
+                change = change + 1
+            current[j] = min( add, delete, change )
+
+    return current[n]
+
+def get_packaging_files(package_path):
+    res=[]
+    for tmp_res in os.listdir( package_path ):
+        if tmp_res.endswith( ".spec" ) and \
+           os.path.isfile( package_path + "/" + tmp_res ):
+            res.append(tmp_res)
+    return res
+
+def findBestSpecFile( package_path, package_name ):
+    """Find the name of the spec file
+       which matches best with `package_name`"""
+    specFileList = get_packaging_files( package_path )
+
+    specFile = None
+    if len( specFileList ) < 1:
+        # No spec file in list
+        specFile = None
+    elif len( specFileList ) == 1:
+        # Only one spec file
+        specFile = specFileList[0]
+    else:
+        sameStart = []
+        for spec in specFileList:
+            if str( spec[:-5] ) == str( package_name ):
+                # This spec file has the same name as the package
+                specFile = spec
+                break
+            elif spec.startswith( package_name ):
+                # This spec file has a name which looks like the package
+                sameStart.append( spec )
+
+        if specFile is None:
+            if len( sameStart ) > 0:
+                # Sort the list of 'same start' by the Levenshtein distance
+                sameStart.sort( key = lambda x: \
+		                levenshtein( x, package_name ) )
+                specFile = sameStart[0]
+            else:
+                # No spec file starts with the name of the package,
+                # sort the whole spec file list by the Levenshtein distance
+                specFileList.sort( key = lambda x: \
+		                   levenshtein( x, package_name ) )
+                specFile = specFileList[0]
+
+    if specFile is None:
+        msg = "Found no spec file matching package name '%s'" % package_name
+        raise ServiceError(msg, 2)
+
+    return specFile
 
 def construct_gbs_args(args, outdir, gitdir):
     """Construct args list for GBS"""
@@ -60,6 +136,8 @@ def construct_gbs_args(args, outdir, gitdir):
                 'debug': None}
     if args.revision:
         gbs_args['commit'] = args.revision
+    if args.spec:
+        gbs_args['spec'] = args.spec
     return argparse.Namespace(**gbs_args)
 
 def read_config(filenames):
@@ -126,6 +204,9 @@ def parse_args(argv):
                         default=os.path.abspath(os.curdir))
     parser.add_argument('--revision', help='Remote repository URL',
                         default='HEAD')
+    parser.add_argument('--spec', type=basename_type,
+                        help='specify a spec file to use. It should be a file '
+                        'name that GBS will find it in packaging dir')
     parser.add_argument('--verbose', '-v', help='Verbose output',
                         choices=['yes', 'no'])
     parser.add_argument('--config', action='append',
@@ -166,6 +247,19 @@ def main(argv=None):
         except OSError as err:
             if err.errno != os.errno.EEXIST:
                 raise ServiceError('Failed to create outdir: %s' % err, 1)
+        os.chdir(repo.repodir)
+        LOGGER.info('args.spec %s' % args.spec)
+        if args.spec is None:
+            spec_name=os.path.basename(args.url)
+            if spec_name.endswith(".git"):
+                  spec_name=spec_name[:-4]
+            args.spec = findBestSpecFile('./packaging', spec_name)
+        else:
+            args.spec = findBestSpecFile('./packaging', args.spec)
+        if args.spec is None:
+            LOGGER.error('no spec file available in packaging'
+                                                         ' directory')
+            return 2
 
         # Export sources with GBS
         gbs_export(repo, args)
