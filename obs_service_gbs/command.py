@@ -31,7 +31,6 @@ from gitbuildsys.errors import CmdError
 import gbp.log as gbplog
 
 from gbp.rpm import guess_spec, NoSpecError
-from gitbuildsys.parsing import  basename_type
 import gbp_repocache
 from gbp_repocache import CachedRepo, CachedRepoError
 
@@ -204,7 +203,7 @@ def parse_args(argv):
                         default=os.path.abspath(os.curdir))
     parser.add_argument('--revision', help='Remote repository URL',
                         default='HEAD')
-    parser.add_argument('--spec', type=basename_type,
+    parser.add_argument('--spec',
                         help='specify a spec file to use. It should be a file '
                         'name that GBS will find it in packaging dir')
     parser.add_argument('--verbose', '-v', help='Verbose output',
