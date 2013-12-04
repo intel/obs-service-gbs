@@ -26,6 +26,7 @@ import traceback
 from ConfigParser import SafeConfigParser
 
 from gitbuildsys.cmd_export import main as cmd_export
+from gitbuildsys.utils import read_localconf
 from gitbuildsys import log as gbs_log
 from gitbuildsys.errors import CmdError
 import gbp.log as gbplog
@@ -121,6 +122,7 @@ def findBestSpecFile( package_path, package_name ):
 def construct_gbs_args(args, outdir, gitdir):
     """Construct args list for GBS"""
     # Replicate gbs export command line arguments
+
     gbs_args = {'outdir': outdir,
                 'gitdir': gitdir,
                 'spec': None,
@@ -133,6 +135,7 @@ def construct_gbs_args(args, outdir, gitdir):
                 'squash_patches_until': None,
                 'packaging_dir': None,
                 'debug': None}
+
     if args.revision:
         gbs_args['commit'] = args.revision
     if args.spec:
@@ -260,6 +263,7 @@ def main(argv=None):
                                                          ' directory')
             return 2
 
+        read_localconf(".")
         # Export sources with GBS
         gbs_export(repo, args)
 
