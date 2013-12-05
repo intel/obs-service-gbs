@@ -18,6 +18,7 @@
 # MA 02110-1301, USA.
 """Tests for the GBS source service"""
 
+import grp
 import os
 import shutil
 import stat
@@ -190,4 +191,18 @@ class TestGbsService(UnitTestsBase):
         ok_(not os.path.exists(default_cache), os.listdir('.'))
         ok_(os.path.exists('my-repo-cache'), os.listdir('.'))
 
+    def test_user_group_config(self):
+        """Test the user/group settings"""
+        # Changing to current user/group should succeed
+        os.environ['OBS_GBS_GBS_USER'] = str(os.getuid())
+        os.environ['OBS_GBS_GBS_GROUP'] = grp.getgrgid(os.getgid()).gr_name
+        eq_(service(['--url', self.orig_repo.path]), 0)
+
+        # Changing to non-existent user should fail
+        os.environ['OBS_GBS_GBS_USER'] = '_non_existent_user'
+        del os.environ['OBS_GBS_GBS_GROUP']
+        eq_(service(['--url', self.orig_repo.path]), 1)
+
+        # Return env
+        del os.environ['OBS_GBS_GBS_USER']
 

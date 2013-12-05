@@ -32,6 +32,7 @@ import gbp.log as gbplog
 
 import gbp_repocache
 from gbp_repocache import CachedRepo, CachedRepoError
+from obs_service_gbp_utils import GbpServiceError, fork_call, sanitize_uid_gid
 
 
 # Setup logging
@@ -64,7 +65,9 @@ def construct_gbs_args(args, outdir, gitdir):
 
 def read_config(filenames):
     '''Read configuration file(s)'''
-    defaults = {'repo-cache-dir': '/var/cache/obs/gbs-repos/'}
+    defaults = {'repo-cache-dir': '/var/cache/obs/gbs-repos/',
+                'gbs-user': None,
+                'gbs-group': None}
 
     filenames = [os.path.expanduser(fname) for fname in filenames]
     LOGGER.debug('Trying %s config files: %s' % (len(filenames), filenames))
@@ -85,7 +88,7 @@ def read_config(filenames):
     # We only use keys from one section, for now
     return dict(parser.items('general'))
 
-def gbs_export(repo, args):
+def gbs_export(repo, args, config):
     '''Export packaging files with GBS'''
     # Create temporary directory
     try:
@@ -93,13 +96,25 @@ def gbs_export(repo, args):
     except OSError as err:
         raise ServiceError('Failed to create tmpdir: %s' % err, 1)
 
+    # Determine UID/GID and grant permissions to tmpdir
+    try:
+        uid, gid = sanitize_uid_gid(config['gbs-user'], config['gbs-group'])
+    except GbpServiceError as err:
+        raise ServiceError(err, 1)
+    os.chown(tmpdir, uid, gid)
+
     # Do export
     try:
         gbs_args = construct_gbs_args(args, tmpdir, repo.repodir)
         LOGGER.info('Exporting packaging files with GBS')
         LOGGER.debug('gbs args: %s' % gbs_args)
         try:
-            cmd_export(gbs_args)
+            fork_call(uid, gid, cmd_export, gbs_args)
+        except GbpServiceError as err:
+            LOGGER.error('Internal service error when trying to run GBS: '
+                         '%s' % err)
+            LOGGER.error('Most likely a configuration error (or a BUG)!')
+            raise ServiceError('Failed to run GBS thread: %s' % err, 1)
         except CmdError as err:
             raise ServiceError('GBS export failed: %s' % err, 2)
         except Exception as err:
@@ -168,7 +183,7 @@ def main(argv=None):
                 raise ServiceError('Failed to create outdir: %s' % err, 1)
 
         # Export sources with GBS
-        gbs_export(repo, args)
+        gbs_export(repo, args, config)
 
     except ServiceError as err:
         LOGGER.error(err[0])
