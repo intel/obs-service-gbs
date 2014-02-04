@@ -8,6 +8,10 @@
     <parameter name="revision">
         <description>Revision (tree-ish) to be built. Default is HEAD.</description>
     </parameter>
+    <parameter name="spec">
+        <description>specify a spec file to use. It should be a file name
+                        that GBS will find it in packaging dir</description>
+    </parameter>
     <parameter name="verbose">
         <description>Enable verbose output. For debugging purposes.</description>
         <allowedvalue>no</allowedvalue>
