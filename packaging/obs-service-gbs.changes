@@ -1,3 +1,13 @@
+* Fri Mar 07 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.3
+- Release 0.3
+- Ability to run gbs under different user/group
+  This change adds new configuration file options to set the user/group
+  under which gbs is run in the service. The service itself is run under
+  whatever user/group the source service server itself is configured to
+  use. The service now spawns a separate thread for gbs and sets the
+  uid/gid there before calling gbs - this is accomplished by utilizing
+  functionality from the obs-service-git-buildpackage-utils module.
+
 * Thu Aug 08 2013 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.2
 - Release 0.2
 - Depend on the gbp-repocache package
