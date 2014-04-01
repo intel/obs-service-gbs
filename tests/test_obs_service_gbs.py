@@ -19,6 +19,7 @@
 """Tests for the GBS source service"""
 
 import grp
+import json
 import os
 import shutil
 import stat
@@ -190,6 +191,18 @@ class TestGbsService(UnitTestsBase):
         eq_(service(['--url', self.orig_repo.path, '--config', 'my.conf']), 0)
         ok_(not os.path.exists(default_cache), os.listdir('.'))
         ok_(os.path.exists('my-repo-cache'), os.listdir('.'))
+
+    def test_options_git_meta(self):
+        """Test the --git-meta option"""
+        eq_(service(['--url', self.orig_repo.path, '--git-meta=_git_meta']), 0)
+
+        # Check that the file was created and is json-parseable
+        with open('_git_meta') as meta_fp:
+            json.load(meta_fp)
+
+        # Test failure
+        eq_(service(['--url', self.orig_repo.path,
+                     '--git-meta=test-package.spec']), 1)
 
     def test_user_group_config(self):
         """Test the user/group settings"""

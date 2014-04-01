@@ -33,6 +33,7 @@ import gbp.log as gbplog
 import gbp_repocache
 from gbp_repocache import CachedRepo, CachedRepoError
 from obs_service_gbp_utils import GbpServiceError, fork_call, sanitize_uid_gid
+from obs_service_gbp_utils import write_treeish_meta
 
 
 # Setup logging
@@ -145,6 +146,9 @@ def parse_args(argv):
                         choices=['yes', 'no'])
     parser.add_argument('--config', action='append',
                         help='Config file to use, can be given multiple times')
+    parser.add_argument('--git-meta', metavar='FILENAME',
+                        help='Create a json-formatted file FILENAME containing'
+                             'metadata about the exported revision')
     args = parser.parse_args(argv)
     if not args.config:
         args.config = default_configs
@@ -185,6 +189,13 @@ def main(argv=None):
         # Export sources with GBS
         gbs_export(repo, args, config)
 
+        # Write git-meta
+        if args.git_meta:
+            try:
+                write_treeish_meta(repo.repo, args.revision, args.outdir,
+                                   args.git_meta)
+            except GbpServiceError as err:
+                raise ServiceError(str(err), 1)
     except ServiceError as err:
         LOGGER.error(err[0])
         ret = err[1]

@@ -16,7 +16,7 @@ Source:         %{name}-%{version}.tar.bz2
 Requires:       gbs-export
 Requires:       git-buildpackage-common
 Requires:       gbp-repocache
-Requires:       obs-service-git-buildpackage-utils
+Requires:       obs-service-git-buildpackage-utils > 0.5
 BuildRequires:  python
 BuildRequires:  python-setuptools
 %if 0%{?do_unittests}
