@@ -1,3 +1,12 @@
+* Fri Apr 04 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.4
+- Release 0.4
+- New option for creating a git-meta file
+  Add a new 'git-meta' option for writing metadata about the exported
+  treeish into a text file in json format. The argument for the option is
+  the filename to write into.
+  NOTE! Be careful with the filename: the service fails if the filename
+  already exists in the exported files.
+
 * Fri Mar 07 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.3
 - Release 0.3
 - Ability to run gbs under different user/group
