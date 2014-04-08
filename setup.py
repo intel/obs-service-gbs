@@ -21,9 +21,17 @@
 
 from setuptools import setup
 
+def tag_from_spec(tag):
+    """Get value of an rpm tag from the spec file"""
+    with open('packaging/obs-service-gbs.spec', 'r') as spec:
+        for line in spec.readlines():
+            if line.lower().startswith(tag.lower() + ':'):
+                return line.split(':', 1)[1].strip()
+    raise Exception("ERROR: unable to parse '%s' from spec file" % tag)
+
 setup(name='obs_service_gbs',
-      version='0.0',
-      description='OBS source service utilizing GBS (Git Build System)',
+      version=tag_from_spec('Version'),
+      description=tag_from_spec('Summary'),
       author='Markus Lehtonen',
       author_email='markus.lehtonen@linux.intel.com',
       packages=['obs_service_gbs'],
