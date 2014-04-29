@@ -110,7 +110,7 @@ def gbs_export(repo, args, config):
         LOGGER.info('Exporting packaging files with GBS')
         LOGGER.debug('gbs args: %s' % gbs_args)
         try:
-            fork_call(uid, gid, cmd_export, gbs_args)
+            fork_call(uid, gid, cmd_export)(gbs_args)
         except GbpServiceError as err:
             LOGGER.error('Internal service error when trying to run GBS: '
                          '%s' % err)
