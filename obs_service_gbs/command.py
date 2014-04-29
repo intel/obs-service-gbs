@@ -22,7 +22,6 @@ import argparse
 import os
 import shutil
 import tempfile
-import traceback
 from ConfigParser import SafeConfigParser
 
 from gitbuildsys.cmd_export import main as cmd_export
@@ -32,8 +31,8 @@ import gbp.log as gbplog
 
 import gbp_repocache
 from gbp_repocache import CachedRepo, CachedRepoError
-from obs_service_gbp_utils import GbpServiceError, fork_call, sanitize_uid_gid
-from obs_service_gbp_utils import write_treeish_meta
+from obs_service_gbp_utils import GbpServiceError, GbpChildBTError, fork_call
+from obs_service_gbp_utils import sanitize_uid_gid, write_treeish_meta
 
 
 # Setup logging
@@ -116,11 +115,14 @@ def gbs_export(repo, args, config):
                          '%s', err)
             LOGGER.error('Most likely a configuration error (or a BUG)!')
             raise ServiceError('Failed to run GBS thread: %s' % err, 1)
-        except CmdError as err:
-            raise ServiceError('GBS export failed: %s' % err, 2)
-        except Exception as err:
-            LOGGER.debug(traceback.format_exc())
-            raise ServiceError('Uncaught exception in GBS, export failed', 2)
+        except GbpChildBTError as err:
+            # CmdError and its sublasses are exptected errors
+            if issubclass(err.typ, CmdError):
+                raise ServiceError('GBS export failed: %s' % err.val, 2)
+            else:
+                LOGGER.error('Uncaught exception in GBS:\n'
+                             '%s', err.prettyprint_tb())
+                raise ServiceError('GBS crashed, export failed', 2)
 
         # Move packaging files from tmpdir to actual outdir
         exportdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])

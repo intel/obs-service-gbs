@@ -21,6 +21,7 @@ BuildRequires:  python
 BuildRequires:  python-setuptools
 %if 0%{?do_unittests}
 BuildRequires:  python-coverage
+BuildRequires:  python-mock
 BuildRequires:  python-nose
 BuildRequires:  gbs-export
 BuildRequires:  git-buildpackage-common

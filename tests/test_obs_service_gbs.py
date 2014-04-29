@@ -19,6 +19,7 @@
 """Tests for the GBS source service"""
 
 import grp
+import mock
 import json
 import os
 import shutil
@@ -33,6 +34,15 @@ from obs_service_gbs.command import main as export_service
 
 
 TEST_DATA_DIR = os.path.abspath(os.path.join('tests', 'data'))
+
+
+class MockGbsError(Exception):
+    """Mock gbs crashes"""
+    pass
+
+def _mock_export():
+    """Mock export main function for testing crashes"""
+    raise MockGbsError()
 
 
 def service(argv=None):
@@ -152,6 +162,11 @@ class TestGbsService(UnitTestsBase):
         """Test GBS export failure"""
         eq_(service(['--url', self.orig_repo.path, '--revision', 'v0.1~1']), 2)
         eq_(os.listdir('.'), [])
+
+    @mock.patch('obs_service_gbs.command.cmd_export', _mock_export)
+    def test_gbs_crash(self):
+        """Test crash of gbs export"""
+        eq_(service(['--url', self.orig_repo.path, '--revision', 'master']), 2)
 
     def test_options_outdir(self):
         """Test the --outdir option"""
