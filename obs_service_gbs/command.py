@@ -71,10 +71,10 @@ def read_config(filenames):
                 'gbs-group': None}
 
     filenames = [os.path.expanduser(fname) for fname in filenames]
-    LOGGER.debug('Trying %s config files: %s' % (len(filenames), filenames))
+    LOGGER.debug('Trying %s config files: %s', len(filenames), filenames)
     parser = SafeConfigParser(defaults=defaults)
     read = parser.read(filenames)
-    LOGGER.debug('Read %s config files: %s' % (len(read), read))
+    LOGGER.debug('Read %s config files: %s', len(read), read)
 
     # Add our one-and-only section, if it does not exist
     if not parser.has_section('general'):
@@ -108,12 +108,12 @@ def gbs_export(repo, args, config):
     try:
         gbs_args = construct_gbs_args(args, tmpdir, repo.repodir)
         LOGGER.info('Exporting packaging files with GBS')
-        LOGGER.debug('gbs args: %s' % gbs_args)
+        LOGGER.debug('gbs args: %s', gbs_args)
         try:
             fork_call(uid, gid, cmd_export)(gbs_args)
         except GbpServiceError as err:
             LOGGER.error('Internal service error when trying to run GBS: '
-                         '%s' % err)
+                         '%s', err)
             LOGGER.error('Most likely a configuration error (or a BUG)!')
             raise ServiceError('Failed to run GBS thread: %s' % err, 1)
         except CmdError as err:
@@ -200,7 +200,7 @@ def main(argv=None):
         LOGGER.error(err[0])
         ret = err[1]
     except CachedRepoError as err:
-        LOGGER.error('RepoCache: %s' % err)
+        LOGGER.error('RepoCache: %s', err)
         ret = 1
 
     return ret
