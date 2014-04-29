@@ -29,6 +29,7 @@ import tempfile
 from nose.tools import assert_raises, eq_, ok_
 
 from gbp.git.repository import GitRepository
+from obs_service_gbp_utils import GbpServiceError
 
 from obs_service_gbs.command import main as export_service
 
@@ -43,6 +44,11 @@ class MockGbsError(Exception):
 def _mock_export():
     """Mock export main function for testing crashes"""
     raise MockGbsError()
+
+def _mock_fork(*args, **kwargs):
+    """Mock fork call function for testing crashes"""
+    raise GbpServiceError(args, kwargs)
+
 
 
 def service(argv=None):
@@ -167,6 +173,11 @@ class TestGbsService(UnitTestsBase):
     def test_gbs_crash(self):
         """Test crash of gbs export"""
         eq_(service(['--url', self.orig_repo.path, '--revision', 'master']), 2)
+
+    @mock.patch('obs_service_gbs.command.fork_call', _mock_fork)
+    def test_fork_call_crash(self):
+        """Test handling of crash in the obs_service_gbp_utils fork_call()"""
+        eq_(service(['--url', self.orig_repo.path, '--revision', 'master']), 1)
 
     def test_options_outdir(self):
         """Test the --outdir option"""
