@@ -1,6 +1,9 @@
 <service name="gbs">
     <summary>Build with GBS (Git Build System)</summary>
     <description>Export packaging files from a git repository managed with GBS (Git Build System).</description>
+    <parameter name="git-meta">
+        <description>Export meta data about the revision into a file in JSON format.</description>
+    </parameter>
     <parameter name="url">
         <description>Remote repository URL</description>
         <required/>
