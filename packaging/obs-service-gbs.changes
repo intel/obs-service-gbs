@@ -1,3 +1,24 @@
+* Tue Jun 03 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.5
+- Release version 0.5
+- Better handling of gbs export crashes. Catch unexpected gbs exceptions and
+  print a traceback in error log.
+- Adapt to new fork_call API of obs_service_gbp_utils
+- Add 'git-meta' option to the .service file
+- Enhancements in setup.py, regarding package meta data
+- Documentation:
+  * Add deployment doc
+  * Add README
+  * Add an example configuration file
+- Exit with 3 when GBS crashes
+- Fix one help text in arg parser
+- Implement 'error-pkg' parameter
+  Instead of causing a service error generate a special "error package"
+  that shows the service error log but fails to build. The parameter value
+  is a comma-separated list of integers, representing the exit codes for
+  which the special error package is created.
+  This is a special hack to prevent the +creation of broken packages in
+  case of service failures.
+
 * Fri Apr 04 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.4
 - Release 0.4
 - New option for creating a git-meta file
