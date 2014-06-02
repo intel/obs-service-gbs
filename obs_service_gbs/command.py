@@ -161,21 +161,21 @@ def main(argv=None):
     """Main function"""
 
     ret = 0
+    args = parse_args(argv)
+    args.outdir = os.path.abspath(args.outdir)
+
+    if args.verbose == 'yes':
+        gbplog.setup(color='auto', verbose=True)
+        LOGGER.setLevel(gbplog.DEBUG)
+        gbp_repocache.LOGGER.setLevel(gbplog.DEBUG)
+        gbs_log.setup(verbose=True)
+    else:
+        gbplog.setup(color='auto', verbose=False)
+        gbs_log.setup(verbose=False)
+
+    LOGGER.info('Starting GBS source service')
+
     try:
-        args = parse_args(argv)
-        args.outdir = os.path.abspath(args.outdir)
-
-        if args.verbose == 'yes':
-            gbplog.setup(color='auto', verbose=True)
-            LOGGER.setLevel(gbplog.DEBUG)
-            gbp_repocache.LOGGER.setLevel(gbplog.DEBUG)
-            gbs_log.setup(verbose=True)
-        else:
-            gbplog.setup(color='auto', verbose=False)
-            gbs_log.setup(verbose=False)
-
-        LOGGER.info('Starting GBS source service')
-
         config = read_config(args.config)
         # Create / update cached repository
         repo = CachedRepo(config['repo-cache-dir'], args.url)
