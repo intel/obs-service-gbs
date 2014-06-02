@@ -122,7 +122,7 @@ def gbs_export(repo, args, config):
             else:
                 LOGGER.error('Uncaught exception in GBS:\n'
                              '%s', err.prettyprint_tb())
-                raise ServiceError('GBS crashed, export failed', 2)
+                raise ServiceError('GBS crashed, export failed', 3)
 
         # Move packaging files from tmpdir to actual outdir
         exportdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])

@@ -172,7 +172,7 @@ class TestGbsService(UnitTestsBase):
     @mock.patch('obs_service_gbs.command.cmd_export', _mock_export)
     def test_gbs_crash(self):
         """Test crash of gbs export"""
-        eq_(service(['--url', self.orig_repo.path, '--revision', 'master']), 2)
+        eq_(service(['--url', self.orig_repo.path, '--revision', 'master']), 3)
 
     @mock.patch('obs_service_gbs.command.fork_call', _mock_fork)
     def test_fork_call_crash(self):
