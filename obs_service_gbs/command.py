@@ -35,6 +35,12 @@ from obs_service_gbp_utils import GbpServiceError, GbpChildBTError, fork_call
 from obs_service_gbp_utils import sanitize_uid_gid, write_treeish_meta
 
 
+# Exit codes
+EXIT_OK = 0
+EXIT_ERR_SERVICE = 1
+EXIT_ERR_GBS_EXPORT = 2
+EXIT_ERR_GBS_CRASH = 3
+
 # Setup logging
 LOGGER = gbplog.getLogger('source_service')
 LOGGER.setLevel(gbplog.INFO)
@@ -94,13 +100,14 @@ def gbs_export(repo, args, config):
     try:
         tmpdir = tempfile.mkdtemp(dir=args.outdir)
     except OSError as err:
-        raise ServiceError('Failed to create tmpdir: %s' % err, 1)
+        raise ServiceError('Failed to create tmpdir: %s' % err,
+                           EXIT_ERR_SERVICE)
 
     # Determine UID/GID and grant permissions to tmpdir
     try:
         uid, gid = sanitize_uid_gid(config['gbs-user'], config['gbs-group'])
     except GbpServiceError as err:
-        raise ServiceError(err, 1)
+        raise ServiceError(err, EXIT_ERR_SERVICE)
     os.chown(tmpdir, uid, gid)
 
     # Do export
@@ -114,15 +121,18 @@ def gbs_export(repo, args, config):
             LOGGER.error('Internal service error when trying to run GBS: '
                          '%s', err)
             LOGGER.error('Most likely a configuration error (or a BUG)!')
-            raise ServiceError('Failed to run GBS thread: %s' % err, 1)
+            raise ServiceError('Failed to run GBS thread: %s' % err,
+                               EXIT_ERR_SERVICE)
         except GbpChildBTError as err:
             # CmdError and its sublasses are exptected errors
             if issubclass(err.typ, CmdError):
-                raise ServiceError('GBS export failed: %s' % err.val, 2)
+                raise ServiceError('GBS export failed: %s' % err.val,
+                                   EXIT_ERR_GBS_EXPORT)
             else:
                 LOGGER.error('Uncaught exception in GBS:\n'
                              '%s', err.prettyprint_tb())
-                raise ServiceError('GBS crashed, export failed', 3)
+                raise ServiceError('GBS crashed, export failed',
+                                   EXIT_ERR_GBS_CRASH)
 
         # Move packaging files from tmpdir to actual outdir
         exportdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])
@@ -160,7 +170,7 @@ def parse_args(argv):
 def main(argv=None):
     """Main function"""
 
-    ret = 0
+    ret = EXIT_OK
     args = parse_args(argv)
     args.outdir = os.path.abspath(args.outdir)
 
@@ -186,7 +196,8 @@ def main(argv=None):
             os.makedirs(args.outdir)
         except OSError as err:
             if err.errno != os.errno.EEXIST:
-                raise ServiceError('Failed to create outdir: %s' % err, 1)
+                raise ServiceError('Failed to create outdir: %s' % err,
+                                   EXIT_ERR_SERVICE)
 
         # Export sources with GBS
         gbs_export(repo, args, config)
@@ -197,12 +208,12 @@ def main(argv=None):
                 write_treeish_meta(repo.repo, args.revision, args.outdir,
                                    args.git_meta)
             except GbpServiceError as err:
-                raise ServiceError(str(err), 1)
+                raise ServiceError(str(err), EXIT_ERR_SERVICE)
     except ServiceError as err:
         LOGGER.error(err[0])
         ret = err[1]
     except CachedRepoError as err:
         LOGGER.error('RepoCache: %s', err)
-        ret = 1
+        ret = EXIT_ERR_SERVICE
 
     return ret
