@@ -234,6 +234,19 @@ class TestGbsService(UnitTestsBase):
         eq_(service(['--url', self.orig_repo.path,
                      '--git-meta=test-package.spec']), 1)
 
+    def test_options_error_pkg(self):
+        """Test the --error-pkg option"""
+        # Do not create err-pkg if exit code not listed
+        eq_(service(['--url', self.orig_repo.path, '--error-pkg=2,3',
+                     '--revision=foobar']), 1)
+        self.check_files([])
+
+        # Catch error and create err-pkg
+        eq_(service(['--url', self.orig_repo.path, '--error-pkg=1,2,3',
+                     '--revision=foobar', '--outdir=foo']), 0)
+        self.check_files(['service-error.spec', 'service-error'],
+                         directory='foo')
+
     def test_user_group_config(self):
         """Test the user/group settings"""
         # Changing to current user/group should succeed

@@ -1,6 +1,9 @@
 <service name="gbs">
     <summary>Build with GBS (Git Build System)</summary>
     <description>Export packaging files from a git repository managed with GBS (Git Build System).</description>
+    <parameter name="error-pkg">
+        <description>Instead of service error create an "error package". Comma-separated list of exit codes.</description>
+    </parameter>
     <parameter name="git-meta">
         <description>Export meta data about the revision into a file in JSON format.</description>
     </parameter>

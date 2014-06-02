@@ -41,6 +41,37 @@ EXIT_ERR_SERVICE = 1
 EXIT_ERR_GBS_EXPORT = 2
 EXIT_ERR_GBS_CRASH = 3
 
+# Template spec file for the "error package"
+ERROR_PKG_SPEC = """
+Name:           service-error
+Version:        1
+Release:        0
+License:        GPL-2.0+
+Summary:        Package indicating an export error in gbs source service
+Source0:        service-error
+
+%description
+This is a dummy package created by obs-service-gbs that indicates that
+exporting the packaging files failed. This is a special hack to prevent the
+creation of broken packages in case of service failures. This behaviour was
+implicitly enabled with the 'error-pkg' parameter of the service.
+
+%build
+cat << EOF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!
+!!!
+!!! OBS-SERVICE-GBS FAILED
+!!!
+!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+--- SERVICE ERROR LOG --------------------------------------------------------
+`sed s'/^/  /' %{SOURCE0}`
+--- END OF SERVICE ERROR LOG -------------------------------------------------
+EOF
+exit 1
+"""
+
 # Setup logging
 LOGGER = gbplog.getLogger('source_service')
 LOGGER.setLevel(gbplog.INFO)
@@ -143,6 +174,10 @@ def gbs_export(repo, args, config):
     finally:
         shutil.rmtree(tmpdir)
 
+def integer_list(string):
+    """Convert a string of comma-separated integers into a list of ints"""
+    return [int(val.strip()) for val in string.split(',') if val]
+
 def parse_args(argv):
     """Argument parser"""
     default_configs = ['/etc/obs/services/gbs',
@@ -161,6 +196,11 @@ def parse_args(argv):
     parser.add_argument('--git-meta', metavar='FILENAME',
                         help='Create a json-formatted file FILENAME containing'
                              'metadata about the exported revision')
+    parser.add_argument('--error-pkg', metavar='EXIT_CODES', type=integer_list,
+                        default=[],
+                        help='Comma-separated list of exit codes that cause '
+                             'an "error package" to be created instead of '
+                             'causing a service error.')
     args = parser.parse_args(argv)
     if not args.config:
         args.config = default_configs
@@ -182,22 +222,30 @@ def main(argv=None):
     else:
         gbplog.setup(color='auto', verbose=False)
         gbs_log.setup(verbose=False)
+    # Add a new handler writing to a tempfile into the root logger
+    file_log = tempfile.NamedTemporaryFile(prefix='gbs-service_')
+    file_handler = gbplog.GbpStreamHandler(file_log)
+    gbplog.getLogger().addHandler(file_handler)
 
     LOGGER.info('Starting GBS source service')
+
+    # Create outdir
+    try:
+        os.makedirs(args.outdir)
+    except OSError as err:
+        if err.errno != os.errno.EEXIST:
+            LOGGER.error('Failed to create outdir: %s', err)
+            return EXIT_ERR_SERVICE
 
     try:
         config = read_config(args.config)
         # Create / update cached repository
-        repo = CachedRepo(config['repo-cache-dir'], args.url)
-        args.revision = repo.update_working_copy(args.revision,
-                                                 submodules=False)
-        # Create outdir
         try:
-            os.makedirs(args.outdir)
-        except OSError as err:
-            if err.errno != os.errno.EEXIST:
-                raise ServiceError('Failed to create outdir: %s' % err,
-                                   EXIT_ERR_SERVICE)
+            repo = CachedRepo(config['repo-cache-dir'], args.url)
+            args.revision = repo.update_working_copy(args.revision,
+                                                     submodules=False)
+        except CachedRepoError as err:
+            raise ServiceError('RepoCache: %s' % err, EXIT_ERR_SERVICE)
 
         # Export sources with GBS
         gbs_export(repo, args, config)
@@ -211,9 +259,14 @@ def main(argv=None):
                 raise ServiceError(str(err), EXIT_ERR_SERVICE)
     except ServiceError as err:
         LOGGER.error(err[0])
-        ret = err[1]
-    except CachedRepoError as err:
-        LOGGER.error('RepoCache: %s', err)
-        ret = EXIT_ERR_SERVICE
+        if err[1] in args.error_pkg:
+            file_handler.flush()
+            error_fn = os.path.join(args.outdir, 'service-error')
+            shutil.copy2(file_log.name, error_fn)
+            with open(error_fn + '.spec', 'w') as error_spec:
+                error_spec.write(ERROR_PKG_SPEC)
+            ret = EXIT_OK
+        else:
+            ret = err[1]
 
     return ret
