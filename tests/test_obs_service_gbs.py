@@ -129,6 +129,12 @@ class UnitTestsBase(object):
         repo.add_files(filename)
         repo.commit_files(filename, "Update %s" % filename)
 
+    def check_files(self, files, directory=''):
+        """Check list of files"""
+        found = set(os.listdir(os.path.join(self.tmpdir, directory)))
+        expected = set(files)
+        eq_(found, expected, "Expected: %s, Found: %s" % (expected, found))
+
 
 class TestGbsService(UnitTestsBase):
     """Base class for unit tests"""
@@ -147,9 +153,7 @@ class TestGbsService(UnitTestsBase):
     def test_basic_export(self):
         """Test that export works"""
         eq_(service(['--url', self.orig_repo.path]), 0)
-        files = set(os.listdir('.'))
-        expected = set(['test-package.spec', 'test-package-0.1.tar.bz2'])
-        eq_(files, expected, 'expected: %s, found: %s' % (expected, files))
+        self.check_files(['test-package.spec', 'test-package-0.1.tar.bz2'])
 
     def test_permission_problem(self):
         """Test git-buildpackage failure"""
