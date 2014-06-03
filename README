@@ -1,0 +1,71 @@
+OBS-SERVICE-GBS
+===============
+
+Obs-service-gbs is a source service for OBS (openSUSE Build Service) that uses
+the GBS tool to create the packaging files from a Git repository. It clones and
+caches a remote Git repository and uses the "gbs export" command to export the
+packaging files from there.
+
+
+INSTALLATION
+------------
+Please see the DEPLOYMENT document under package documentation.
+
+
+CONFIGURATION FILE
+------------------
+The service will search for configuration options in:
+    /etc/obs/services/gbs
+        System-wide configuration meant for server installations
+
+    ~/.obs/gbs
+        User-specific configuration for desktop installations
+
+The configuration are read in the above order and system-wide settings are
+overridden by the the user-specific config (if defined there). See the
+example config file (obs-service-gbs.example.conf) in package documentation
+for more details.
+
+
+PARAMETERS
+----------
+The following parameters are accepted in the _service file.
+    <parameter name="error-pkg">EXIT_CODES</parameter>
+        Instead of causing a source service error in the obs server, create a
+        special "error package" that fails to build and shows the service error
+        log in its build log. Parameter value EXIT_CODES is a comma-separated
+        list of exit codes that will cause an error package to be generated
+        instead of a source service error. See the ERROR EXIT CODES section
+        below for more details.
+
+        This parameter is a special hack to prevent the creation of broken
+        packages in case of service failures.
+
+    <parameter name="git-meta">META_FILE</parameter>
+        Export meta data about the exported Git revision into a file in JSON
+        format.
+
+        Be careful with the filename: the service fails if the filename already
+        exists in the exported files.
+
+    <parameter name="url">URL</parameter>
+        Remote repository URL. This is a mandatory parameter.
+
+    <parameter name="revision">TREEISH</parameter>
+       Revision (tree-ish) to be built. Default is HEAD.
+
+    <parameter name="verbose">[yes|no]</parameter>
+        Enable verbose output. Mainly meant for debugging purposes.
+
+
+ERROR EXIT CODES
+----------------
+The exit codes are probably only of interest if one wants to use the
+'error-pkg' parameter.
+
+    1   An internal source service or configuration error
+
+    2   GBS export failure, i.e. GBS fails to export the packaging files.
+
+    3   GBS crash (unhandled exception in GBS code)
+
