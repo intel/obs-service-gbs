@@ -43,6 +43,7 @@ is being maintained with the GBS tool.
 
 %build
 %{__python} setup.py build
+cp config/gbs config/obs-service-gbs.example.config
 
 
 %if 0%{?do_unittests}
@@ -59,6 +60,7 @@ rm -rf %{buildroot}%{python_sitelib}/*info
 %files
 %defattr(-,root,root,-)
 %doc COPYING DEPLOYMENT
+%doc config/obs-service-gbs.example.config
 %dir /usr/lib/obs
 %dir /usr/lib/obs/service
 /usr/lib/obs/service/*
