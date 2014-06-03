@@ -142,7 +142,7 @@ def parse_args(argv):
     parser.add_argument('--url', help='Remote repository URL', required=True)
     parser.add_argument('--outdir', help='Output direcory',
                         default=os.path.abspath(os.curdir))
-    parser.add_argument('--revision', help='Remote repository URL',
+    parser.add_argument('--revision', help='Git tree-ish to export files from',
                         default='HEAD')
     parser.add_argument('--verbose', '-v', help='Verbose output',
                         choices=['yes', 'no'])
