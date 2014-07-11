@@ -268,5 +268,7 @@ def main(argv=None):
             ret = EXIT_OK
         else:
             ret = err[1]
+    finally:
+        file_log.close()
 
     return ret
