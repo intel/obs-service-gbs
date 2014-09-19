@@ -18,3 +18,12 @@
 ## You can give the user and group as name or uid/gid number directly.
 #gbs-user = gbsservice
 #gbs-group = gbsservice
+
+## Git-fetch refs hack
+## Allows fetching/cloning remote repositories that have refs/heads/* pointing
+## to a tag object. Gerrit allows branches pointing to tag objects. However,
+## git disallows this which causes fetch to fail in repocache if such branches
+## exist in the remote repository. This setting activates a hack in repocache
+## to workaround the problem with such remote repositories.
+#repo-cache-refs-hack = yes
+

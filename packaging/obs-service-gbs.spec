@@ -1,5 +1,5 @@
 # Set to 0 if "normal release"
-%define pre_release 0
+%define pre_release 1
 
 %if 0%{?pre_release}
 %define release_prefix 0pre%{pre_release}.
@@ -9,14 +9,14 @@ Name:           obs-service-gbs
 License:        GPL-2.0+
 Group:          Development/Tools/Building
 Summary:        Get sources from a repository managed with GBS
-Version:        0.6
+Version:        0.7
 Release:        %{?release_prefix}%{?opensuse_bs:<CI_CNT>.<B_CNT>}%{!?opensuse_bs:1}
 URL:            http://www.tizen.org
 Source:         %{name}-%{version}.tar.bz2
 Requires:       gbs-export
 Requires:       git-buildpackage-common
 Requires:       gbp-repocache
-Requires:       obs-service-git-buildpackage-utils > 0.6
+Requires:       obs-service-git-buildpackage-utils > 0.7
 BuildRequires:  python
 BuildRequires:  python-setuptools
 %if 0%{?do_unittests}

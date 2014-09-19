@@ -31,8 +31,8 @@ import gbp.log as gbplog
 
 import gbp_repocache
 from gbp_repocache import CachedRepo, CachedRepoError
-from obs_service_gbp_utils import GbpServiceError, GbpChildBTError, fork_call
-from obs_service_gbp_utils import sanitize_uid_gid, write_treeish_meta
+from obs_service_gbp_utils import (GbpServiceError, GbpChildBTError, fork_call,
+                sanitize_uid_gid, write_treeish_meta, str_to_bool)
 
 
 # Exit codes
@@ -104,7 +104,8 @@ def read_config(filenames):
     '''Read configuration file(s)'''
     defaults = {'repo-cache-dir': '/var/cache/obs/gbs-repos/',
                 'gbs-user': None,
-                'gbs-group': None}
+                'gbs-group': None,
+                'repo-cache-refs-hack': 'no'}
 
     filenames = [os.path.expanduser(fname) for fname in filenames]
     LOGGER.debug('Trying %s config files: %s', len(filenames), filenames)
@@ -240,8 +241,10 @@ def main(argv=None):
     try:
         config = read_config(args.config)
         # Create / update cached repository
+        refs_hack = str_to_bool(config['repo-cache-refs-hack'])
         try:
-            repo = CachedRepo(config['repo-cache-dir'], args.url)
+            repo = CachedRepo(config['repo-cache-dir'], args.url,
+                              refs_hack=refs_hack)
             args.revision = repo.update_working_copy(args.revision,
                                                      submodules=False)
         except CachedRepoError as err:

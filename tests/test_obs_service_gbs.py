@@ -18,6 +18,7 @@
 # MA 02110-1301, USA.
 """Tests for the GBS source service"""
 
+import glob
 import grp
 import mock
 import json
@@ -262,3 +263,18 @@ class TestGbsService(UnitTestsBase):
         # Return env
         del os.environ['OBS_GBS_GBS_USER']
 
+    def test_refs_hack_config(self):
+        """Test the repocache refs hack config option"""
+        # Try with hack disabled (default)
+        eq_(service(['--url', self.orig_repo.path]), 0)
+        refs = glob.glob(self.cachedir + '/*/*/.git/refs')
+        eq_(len(refs), 1)
+        ok_(not os.path.islink(refs[0]))
+
+        # Enable hack -> refs should be a symlink
+        os.environ['OBS_GBS_REPO_CACHE_REFS_HACK'] = 'yes'
+        eq_(service(['--url', self.orig_repo.path]), 0)
+        ok_(os.path.islink(refs[0]))
+
+        # Restore env
+        del os.environ['OBS_GBS_REPO_CACHE_REFS_HACK']
