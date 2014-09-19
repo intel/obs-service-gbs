@@ -1,3 +1,15 @@
+* Fri Sep 19 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.7
+- Release version 0.7
+- Add config option for repocache git-fetch refs hack
+  New config file option 'repo-cache-refs-hack' for enabling refs hack in
+  gbp-repocache. The option is disabled, by default.
+  Enabling the hack makes it possible to fetch/clone remote repositories
+  that have branches (refs/heads/*) that point to tag objects. This is
+  possible in Gerrit repositories - "pure" Git repositories managed
+  by Git tools shouldn't have such branches as Git sanity checking
+  prevents them (which is the reason this hack is needed).
+- Remove the log tmpfile handler before closing the file
+
 * Fri Jul 11 2014 Markus Lehtonen <markus.lehtonen@linux.intel.com> 0.6
 - Release version 0.6
 - Close the log tmpfile so that it is removed. Fixes a problem of leftover
