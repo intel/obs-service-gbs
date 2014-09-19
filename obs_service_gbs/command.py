@@ -272,6 +272,7 @@ def main(argv=None):
         else:
             ret = err[1]
     finally:
+        gbplog.getLogger().removeHandler(file_handler)
         file_log.close()
 
     return ret
